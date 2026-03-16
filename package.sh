@@ -16,6 +16,6 @@ zip -r "$OUTPUT" \
     system_prompt.txt \
     templates/ \
     README.md \
-    -x "*.pyc" "__pycache__/*" "state/*" "models.yaml"
+    -x "*.pyc" "__pycache__/*" "state/*" "data/*" "models.yaml"
 
 echo "Packaged: $OUTPUT"

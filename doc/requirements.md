@@ -55,7 +55,7 @@ API keys are set via Alfred's workflow configuration UI (environment variables).
 Models are defined in YAML files, not hardcoded in Python.
 
 - **`models_default.yaml`** — Ships with the workflow. Contains curated defaults. Must not be edited by users (overwritten on update). Included in `package.sh`.
-- **`models.yaml`** — Optional user overrides file. Not shipped, not packaged. Created by the user in the workflow directory.
+- **`models.yaml`** — Optional user overrides file. Not shipped, not packaged. Lives in the user data directory (see below).
 
 ### Model Entry Schema
 
@@ -257,8 +257,8 @@ A keyword with two connections:
                       → [Run Script: copy-config-path]  (⌘+Enter)
 ```
 
-- **Enter** — Opens the workflow directory in Finder.
-- **⌘+Enter** — Copies the workflow directory path to clipboard and sends a notification.
+- **Enter** — Opens the user data directory in Finder.
+- **⌘+Enter** — Copies the user data directory path to clipboard and sends a notification.
 
 The ⌘ modifier is implemented via a second connection with `modifiers: 1048576` (NSEventModifierFlagCommand) pointing to a separate run script node.
 
@@ -294,6 +294,34 @@ A string-based YAML writer (`_save_user_models`) serializes structured model dat
 
 The writer is used by `add-model` and `remove-model`. It always rewrites the entire file from the parsed data (read via `_load_user_models_raw`), preserving both removal entries and model entries.
 
+## User Data Directory
+
+User-mutable files (`models.yaml`, state, and cache) are stored outside the workflow directory so they survive workflow updates (which replace the entire workflow directory).
+
+### Location
+
+- **In Alfred:** Uses the `alfred_workflow_data` environment variable, which points to `~/Library/Application Support/Alfred/Workflow Data/<bundle_id>/`.
+- **CLI fallback:** When `alfred_workflow_data` is not set, falls back to `<workflow_dir>/data/`.
+
+### Directory Layout
+
+```
+<data_dir>/
+  models.yaml                           # User model overrides
+  state/
+    active_model.json                   # Currently selected model
+    last_conversation.json              # Last conversation for ask-more
+    models_cache_{provider}.json        # Cached provider model lists
+```
+
+### Auto-Migration
+
+On first run after a workflow update, if the data directory is external (not inside the workflow directory), existing user files are automatically migrated:
+
+- `models.yaml` is copied from the workflow directory to the data directory.
+- All files in the workflow's `state/` directory are copied to the data directory's `state/` subdirectory.
+- Existing files in the data directory are **never** overwritten — only missing files are copied.
+
 ## Conversation State
 
 - The last conversation (messages + model label) is saved to `state/last_conversation.json`.
@@ -326,7 +354,7 @@ All user-facing feedback (success confirmations, errors) is delivered via macOS 
 `package.sh` creates a `.alfredworkflow` file (zip archive) containing:
 - `info.plist`, `llm.py`, `select_model.py`, `models_default.yaml`, `system_prompt.txt`, `templates/`, `README.md`
 
-Excluded: `*.pyc`, `__pycache__/`, `state/`, `models.yaml` (user file, not shipped).
+Excluded: `*.pyc`, `__pycache__/`, `state/`, `data/`, `models.yaml` (user files, not shipped).
 
 ## info.plist Structure
 
@@ -361,7 +389,6 @@ llm_actions/
   llm.py                  # Main script: API calls, templates, state, YAML parser, CLI dispatcher
   select_model.py         # Model selection script filter (imports from llm.py)
   models_default.yaml     # Default model list (shipped)
-  models.yaml             # User overrides (not shipped, user-created)
   system_prompt.txt       # Default global system prompt
   package.sh              # Builds .alfredworkflow zip
   README.md               # User-facing documentation
@@ -372,10 +399,12 @@ llm_actions/
     change_tone.txt
     translate.txt
     bullet_list.txt
-  state/                  # Runtime state (gitignored, not shipped)
-    active_model.json
-    last_conversation.json
-    models_cache_{provider}.json  # Cached provider model lists (1hr TTL)
+  data/                   # Fallback user data dir (CLI mode, gitignored, not shipped)
+    models.yaml            # User overrides
+    state/
+      active_model.json
+      last_conversation.json
+      models_cache_{provider}.json
   doc/
     requirements.md       # This file
 ```

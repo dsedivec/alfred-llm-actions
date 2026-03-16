@@ -8,6 +8,7 @@ import fnmatch
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -20,10 +21,41 @@ import urllib.request
 
 WORKFLOW_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(WORKFLOW_DIR, "templates")
-STATE_DIR = os.path.join(WORKFLOW_DIR, "state")
 SYSTEM_PROMPT_FILE = os.path.join(WORKFLOW_DIR, "system_prompt.txt")
 
+
+def _resolve_data_dir():
+    d = os.environ.get("alfred_workflow_data")
+    if d:
+        return d
+    return os.path.join(WORKFLOW_DIR, "data")
+
+
+# User-mutable (survives workflow updates)
+DATA_DIR = _resolve_data_dir()
+STATE_DIR = os.path.join(DATA_DIR, "state")
+
 os.makedirs(STATE_DIR, exist_ok=True)
+
+
+def _migrate_user_data():
+    """Copy user files from WORKFLOW_DIR to DATA_DIR on first run after update."""
+    # Skip if DATA_DIR is inside WORKFLOW_DIR (fallback mode)
+    if DATA_DIR.startswith(WORKFLOW_DIR + os.sep) or DATA_DIR == WORKFLOW_DIR:
+        return
+    old_models = os.path.join(WORKFLOW_DIR, "models.yaml")
+    if os.path.exists(old_models) and not os.path.exists(MODELS_USER_FILE):
+        shutil.copy2(old_models, MODELS_USER_FILE)
+    old_state = os.path.join(WORKFLOW_DIR, "state")
+    if os.path.isdir(old_state):
+        for fname in os.listdir(old_state):
+            src = os.path.join(old_state, fname)
+            dst = os.path.join(STATE_DIR, fname)
+            if os.path.isfile(src) and not os.path.exists(dst):
+                shutil.copy2(src, dst)
+
+
+_migrate_user_data()
 
 # ---------------------------------------------------------------------------
 # YAML parser (minimal subset — no PyYAML dependency)
@@ -182,7 +214,7 @@ def _parse_yaml(text):
 # ---------------------------------------------------------------------------
 
 MODELS_DEFAULT_FILE = os.path.join(WORKFLOW_DIR, "models_default.yaml")
-MODELS_USER_FILE = os.path.join(WORKFLOW_DIR, "models.yaml")
+MODELS_USER_FILE = os.path.join(DATA_DIR, "models.yaml")
 
 _models_cache = None
 
@@ -663,14 +695,14 @@ def handle_remove_model(label):
 
 
 def handle_open_config():
-    """Open the workflow directory in Finder."""
-    subprocess.run(["open", WORKFLOW_DIR], check=False)
+    """Open the user data directory in Finder."""
+    subprocess.run(["open", DATA_DIR], check=False)
 
 
 def handle_copy_config_path():
-    """Copy the workflow directory path to clipboard."""
-    _set_clipboard(WORKFLOW_DIR)
-    notify("LLM", f"Path copied: {WORKFLOW_DIR}")
+    """Copy the user data directory path to clipboard."""
+    _set_clipboard(DATA_DIR)
+    notify("LLM", f"Path copied: {DATA_DIR}")
 
 
 # ---------------------------------------------------------------------------

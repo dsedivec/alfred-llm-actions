@@ -28,6 +28,7 @@ def model_dirs(tmp_path, monkeypatch):
     templates_dir.mkdir()
 
     monkeypatch.setattr(llm, "WORKFLOW_DIR", str(tmp_path))
+    monkeypatch.setattr(llm, "DATA_DIR", str(tmp_path))
     monkeypatch.setattr(llm, "TEMPLATES_DIR", str(templates_dir))
     monkeypatch.setattr(llm, "STATE_DIR", str(state_dir))
     monkeypatch.setattr(llm, "SYSTEM_PROMPT_FILE", str(tmp_path / "system_prompt.txt"))
