@@ -4,21 +4,21 @@ import llm
 
 
 class TestResolveDataDir:
-    """Tests for _resolve_data_dir()."""
+    """Tests for resolve_data_dir()."""
 
     def test_returns_alfred_env_when_set(self, monkeypatch, tmp_path):
         target = str(tmp_path / "alfred_data")
         monkeypatch.setenv("alfred_workflow_data", target)
-        assert llm._resolve_data_dir() == target
+        assert llm.resolve_data_dir() == target
 
     def test_falls_back_to_workflow_data_subdir(self, monkeypatch):
         monkeypatch.delenv("alfred_workflow_data", raising=False)
         monkeypatch.setattr(llm, "WORKFLOW_DIR", "/fake/workflow")
-        assert llm._resolve_data_dir() == "/fake/workflow/data"
+        assert llm.resolve_data_dir() == "/fake/workflow/data"
 
 
 class TestMigrateUserData:
-    """Tests for _migrate_user_data()."""
+    """Tests for migrate_user_data()."""
 
     def test_copies_models_yaml(self, tmp_path, monkeypatch):
         """models.yaml is copied from WORKFLOW_DIR to DATA_DIR."""
@@ -36,7 +36,7 @@ class TestMigrateUserData:
         monkeypatch.setattr(llm, "STATE_DIR", str(state))
         monkeypatch.setattr(llm, "MODELS_USER_FILE", str(data / "models.yaml"))
 
-        llm._migrate_user_data()
+        llm.migrate_user_data()
         assert (data / "models.yaml").read_text() == "- label: test\n"
 
     def test_copies_state_files(self, tmp_path, monkeypatch):
@@ -58,7 +58,7 @@ class TestMigrateUserData:
         monkeypatch.setattr(llm, "STATE_DIR", str(state))
         monkeypatch.setattr(llm, "MODELS_USER_FILE", str(data / "models.yaml"))
 
-        llm._migrate_user_data()
+        llm.migrate_user_data()
         assert (state / "active_model.json").read_text() == '{"model":"x"}'
         assert (state / "last_conversation.json").read_text() == "[]"
 
@@ -80,7 +80,7 @@ class TestMigrateUserData:
         monkeypatch.setattr(llm, "STATE_DIR", str(state))
         monkeypatch.setattr(llm, "MODELS_USER_FILE", str(data / "models.yaml"))
 
-        llm._migrate_user_data()
+        llm.migrate_user_data()
         assert (state / "models_cache_openai.json").read_text() == "{}"
 
     def test_does_not_overwrite_existing(self, tmp_path, monkeypatch):
@@ -100,7 +100,7 @@ class TestMigrateUserData:
         monkeypatch.setattr(llm, "STATE_DIR", str(state))
         monkeypatch.setattr(llm, "MODELS_USER_FILE", str(data / "models.yaml"))
 
-        llm._migrate_user_data()
+        llm.migrate_user_data()
         assert (data / "models.yaml").read_text() == "user content"
 
     def test_noop_when_data_inside_workflow(self, tmp_path, monkeypatch):
@@ -118,5 +118,5 @@ class TestMigrateUserData:
         monkeypatch.setattr(llm, "STATE_DIR", str(state))
         monkeypatch.setattr(llm, "MODELS_USER_FILE", str(data / "models.yaml"))
 
-        llm._migrate_user_data()
+        llm.migrate_user_data()
         assert not (data / "models.yaml").exists()

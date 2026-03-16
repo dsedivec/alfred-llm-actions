@@ -24,7 +24,7 @@ TEMPLATES_DIR = os.path.join(WORKFLOW_DIR, "templates")
 SYSTEM_PROMPT_FILE = os.path.join(WORKFLOW_DIR, "system_prompt.txt")
 
 
-def _resolve_data_dir():
+def resolve_data_dir():
     d = os.environ.get("alfred_workflow_data")
     if d:
         return d
@@ -32,13 +32,13 @@ def _resolve_data_dir():
 
 
 # User-mutable (survives workflow updates)
-DATA_DIR = _resolve_data_dir()
+DATA_DIR = resolve_data_dir()
 STATE_DIR = os.path.join(DATA_DIR, "state")
 
 os.makedirs(STATE_DIR, exist_ok=True)
 
 
-def _migrate_user_data():
+def migrate_user_data():
     """Copy user files from WORKFLOW_DIR to DATA_DIR on first run after update."""
     # Skip if DATA_DIR is inside WORKFLOW_DIR (fallback mode)
     if DATA_DIR.startswith(WORKFLOW_DIR + os.sep) or DATA_DIR == WORKFLOW_DIR:
@@ -55,14 +55,14 @@ def _migrate_user_data():
                 shutil.copy2(src, dst)
 
 
-_migrate_user_data()
+migrate_user_data()
 
 # ---------------------------------------------------------------------------
 # YAML parser (minimal subset — no PyYAML dependency)
 # ---------------------------------------------------------------------------
 
 
-def _parse_yaml(text):
+def parse_yaml(text):
     """Parse a minimal YAML subset: mappings, lists, scalars, comments."""
 
     def _scalar(s):
@@ -216,15 +216,15 @@ def _parse_yaml(text):
 MODELS_DEFAULT_FILE = os.path.join(WORKFLOW_DIR, "models_default.yaml")
 MODELS_USER_FILE = os.path.join(DATA_DIR, "models.yaml")
 
-_models_cache = None
+models_cache = None
 
 
-def _deep_merge(base, override):
+def deep_merge(base, override):
     """Deep-merge override dict into base dict. Returns new dict."""
     result = dict(base)
     for key, val in override.items():
         if key in result and isinstance(result[key], dict) and isinstance(val, dict):
-            result[key] = _deep_merge(result[key], val)
+            result[key] = deep_merge(result[key], val)
         else:
             result[key] = val
     return result
@@ -232,19 +232,19 @@ def _deep_merge(base, override):
 
 def load_models():
     """Load and merge models from YAML config files. Returns list of model entries."""
-    global _models_cache
-    if _models_cache is not None:
-        return _models_cache
+    global models_cache
+    if models_cache is not None:
+        return models_cache
 
     # Load defaults
     with open(MODELS_DEFAULT_FILE) as f:
-        defaults = _parse_yaml(f.read())
+        defaults = parse_yaml(f.read())
     models = list(defaults.get("models", []))
 
     # Load user overrides
     if os.path.exists(MODELS_USER_FILE):
         with open(MODELS_USER_FILE) as f:
-            user = _parse_yaml(f.read())
+            user = parse_yaml(f.read())
         removals = []
         additions = []
         for entry in user.get("models", []):
@@ -265,7 +265,7 @@ def load_models():
             ]
         models.extend(additions)
 
-    _models_cache = models
+    models_cache = models
     return models
 
 
@@ -281,12 +281,12 @@ def get_models_dict():
 MODELS_CACHE_TTL = 3600
 
 
-def _models_cache_path(provider):
+def models_cache_path(provider):
     return os.path.join(STATE_DIR, f"models_cache_{provider}.json")
 
 
 def _load_models_cache(provider):
-    path = _models_cache_path(provider)
+    path = models_cache_path(provider)
     if not os.path.exists(path):
         return None
     try:
@@ -300,7 +300,7 @@ def _load_models_cache(provider):
 
 
 def _save_models_cache(provider, models):
-    with open(_models_cache_path(provider), "w") as f:
+    with open(models_cache_path(provider), "w") as f:
         json.dump({"timestamp": time.time(), "models": models}, f)
 
 
@@ -377,7 +377,7 @@ def _fetch_provider_models(provider):
 # ---------------------------------------------------------------------------
 
 
-def _yaml_scalar_str(value):
+def yaml_scalar_str(value):
     """Format a Python value as a YAML scalar string."""
     if isinstance(value, bool):
         return "true" if value else "false"
@@ -416,13 +416,13 @@ def _yaml_scalar_str(value):
     return f'"{s}"'
 
 
-def _write_yaml_value(lines, key, value, indent):
+def write_yaml_value(lines, key, value, indent):
     """Recursively write a YAML key-value pair."""
     prefix = "  " * indent
     if isinstance(value, dict):
         lines.append(f"{prefix}{key}:")
         for k, v in value.items():
-            _write_yaml_value(lines, k, v, indent + 1)
+            write_yaml_value(lines, k, v, indent + 1)
     elif isinstance(value, list):
         lines.append(f"{prefix}{key}:")
         for item in value:
@@ -434,21 +434,21 @@ def _write_yaml_value(lines, key, value, indent):
                             lines.append(f"{prefix}  - {k}:")
                             if isinstance(v, dict):
                                 for k2, v2 in v.items():
-                                    _write_yaml_value(lines, k2, v2, indent + 3)
+                                    write_yaml_value(lines, k2, v2, indent + 3)
                             elif isinstance(v, list):
                                 for li in v:
                                     lines.append(
-                                        f"{prefix}      - {_yaml_scalar_str(li)}"
+                                        f"{prefix}      - {yaml_scalar_str(li)}"
                                     )
                         else:
-                            lines.append(f"{prefix}  - {k}: {_yaml_scalar_str(v)}")
+                            lines.append(f"{prefix}  - {k}: {yaml_scalar_str(v)}")
                         first = False
                     else:
-                        _write_yaml_value(lines, k, v, indent + 2)
+                        write_yaml_value(lines, k, v, indent + 2)
             else:
-                lines.append(f"{prefix}  - {_yaml_scalar_str(item)}")
+                lines.append(f"{prefix}  - {yaml_scalar_str(item)}")
     else:
-        lines.append(f"{prefix}{key}: {_yaml_scalar_str(value)}")
+        lines.append(f"{prefix}{key}: {yaml_scalar_str(value)}")
 
 
 def _load_user_models_raw():
@@ -458,7 +458,7 @@ def _load_user_models_raw():
     if not os.path.exists(MODELS_USER_FILE):
         return entries, removals
     with open(MODELS_USER_FILE) as f:
-        data = _parse_yaml(f.read())
+        data = parse_yaml(f.read())
     for item in data.get("models", []):
         if not isinstance(item, dict):
             continue
@@ -475,16 +475,16 @@ def _save_user_models(entries, removals):
     """Write models.yaml from structured data."""
     lines = ["models:"]
     for pattern in removals:
-        lines.append(f"  - remove_defaults: {_yaml_scalar_str(pattern)}")
+        lines.append(f"  - remove_defaults: {yaml_scalar_str(pattern)}")
     if removals and entries:
         lines.append("")
     for entry in entries:
-        lines.append(f"  - label: {_yaml_scalar_str(entry['label'])}")
-        lines.append(f"    provider: {_yaml_scalar_str(entry['provider'])}")
-        lines.append(f"    model: {_yaml_scalar_str(entry['model'])}")
+        lines.append(f"  - label: {yaml_scalar_str(entry['label'])}")
+        lines.append(f"    provider: {yaml_scalar_str(entry['provider'])}")
+        lines.append(f"    model: {yaml_scalar_str(entry['model'])}")
         params = entry.get("params")
         if params and isinstance(params, dict):
-            _write_yaml_value(lines, "params", params, 2)
+            write_yaml_value(lines, "params", params, 2)
         lines.append("")
     with open(MODELS_USER_FILE, "w") as f:
         f.write("\n".join(lines) + "\n")
@@ -676,8 +676,8 @@ def handle_add_model(provider_model, label):
     entries.append({"label": label, "provider": provider, "model": model_id})
     _save_user_models(entries, removals)
     # Clear the models cache so it reloads
-    global _models_cache
-    _models_cache = None
+    global models_cache
+    models_cache = None
     notify("LLM", f"Added model: {label}")
 
 
@@ -689,8 +689,8 @@ def handle_remove_model(label):
         notify("LLM Error", f"Model not found: {label}")
         return
     _save_user_models(new_entries, removals)
-    global _models_cache
-    _models_cache = None
+    global models_cache
+    models_cache = None
     notify("LLM", f"Removed model: {label}")
 
 
@@ -712,7 +712,7 @@ def handle_copy_config_path():
 _REASONING_BUDGETS = {"high": 10000, "medium": 5000, "low": 2000}
 
 
-def _translate_shorthands(provider, params):
+def translate_shorthands(provider, params):
     """Translate unified shorthands (reasoning, web_search) to provider-native format.
     Returns a new params dict with shorthands removed and native keys added."""
     params = dict(params)
@@ -755,7 +755,7 @@ def _translate_shorthands(provider, params):
             translated.setdefault("plugins", []).append("web")
 
     # Merge: translated first, then raw params override
-    result = _deep_merge(translated, params)
+    result = deep_merge(translated, params)
     return result
 
 
@@ -962,7 +962,7 @@ def call_openai_compatible(
     if params:
         # Messages are special — don't overwrite them
         msgs = payload.pop("messages")
-        payload = _deep_merge(payload, params)
+        payload = deep_merge(payload, params)
         payload["messages"] = msgs
 
     resp = _http_post(endpoint, headers, payload)
@@ -986,7 +986,7 @@ def call_anthropic(api_key, model_id, system_prompt, messages, params=None):
 
     if params:
         msgs = payload.pop("messages")
-        payload = _deep_merge(payload, params)
+        payload = deep_merge(payload, params)
         payload["messages"] = msgs
 
     # If thinking is enabled, bump max_tokens to accommodate
@@ -1021,7 +1021,7 @@ def call_gemini(api_key, model_id, system_prompt, messages, params=None):
 
     if params:
         contents_save = payload.pop("contents")
-        payload = _deep_merge(payload, params)
+        payload = deep_merge(payload, params)
         payload["contents"] = contents_save
 
     resp = _http_post(url, headers, payload)
@@ -1045,7 +1045,7 @@ def call_llm(label, system_prompt, messages):
 
     # Translate shorthands and prepare merged params
     raw_params = model_entry.get("params")
-    params = _translate_shorthands(provider, raw_params) if raw_params else None
+    params = translate_shorthands(provider, raw_params) if raw_params else None
 
     if provider == "openai":
         return call_openai_compatible(

@@ -12,11 +12,11 @@ import llm
 
 
 @pytest.fixture(autouse=True)
-def reset_models_cache():
+def resetmodels_cache():
     """Reset the global models cache before and after each test."""
-    llm._models_cache = None
+    llm.models_cache = None
     yield
-    llm._models_cache = None
+    llm.models_cache = None
 
 
 @pytest.fixture
