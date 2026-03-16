@@ -7,7 +7,6 @@
     {
       "root": "tests",
       "extraPaths": ["."],
-      "reportMissingParameterType": false,
       "reportUnknownArgumentType": false,
       "reportUnknownMemberType": false,
       "reportUnknownParameterType": false,
