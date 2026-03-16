@@ -958,8 +958,9 @@ def call_anthropic(api_key, model_id, system_prompt, messages, params=None):
         payload["messages"] = msgs
 
     # If thinking is enabled, bump max_tokens to accommodate
-    if "thinking" in payload and payload["thinking"].get("type") == "enabled":
-        budget = payload["thinking"].get("budget_tokens", 0)
+    thinking = payload.get("thinking")
+    if isinstance(thinking, dict) and thinking.get("type") == "enabled":
+        budget = thinking.get("budget_tokens", 0)
         if budget > 0 and payload.get("max_tokens", 0) < budget + 4096:
             payload["max_tokens"] = budget + 4096
 
@@ -982,7 +983,7 @@ def call_gemini(api_key, model_id, system_prompt, messages, params=None):
         role = "user" if msg["role"] == "user" else "model"
         contents.append({"role": role, "parts": [{"text": msg["content"]}]})
 
-    payload = {"contents": contents}
+    payload: dict[str, object] = {"contents": contents}
     if system_prompt:
         payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
 

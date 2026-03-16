@@ -1,7 +1,6 @@
 """Tests for state management: active model and conversation persistence."""
 
-from llm import (get_active_model, load_conversation, save_conversation,
-                 set_active_model)
+from llm import get_active_model, load_conversation, save_conversation, set_active_model
 
 DEFAULTS = """\
 models:
@@ -38,6 +37,7 @@ def test_conversation_roundtrip(model_dirs):
     ]
     save_conversation(msgs, "test-model")
     loaded = load_conversation()
+    assert loaded is not None
     assert loaded["model"] == "test-model"
     assert loaded["messages"] == msgs
 

@@ -5,22 +5,25 @@ import pytest
 from llm import call_anthropic, call_gemini, call_openai_compatible
 
 
+class _MockHttpPost:
+    def __init__(self):
+        self.calls = []
+        self._response = {}
+
+    def __call__(self, url, headers, payload, timeout=60):
+        self.calls.append({"url": url, "headers": headers, "payload": payload})
+        return self._response
+
+
 @pytest.fixture
 def mock_http_post(monkeypatch):
     """Mock _http_post and return a callable that sets the response."""
-    calls = []
-
-    def _mock(url, headers, payload, timeout=60):
-        calls.append({"url": url, "headers": headers, "payload": payload})
-        return _mock._response
-
-    _mock.calls = calls
-    _mock._response = {}
+    mock = _MockHttpPost()
 
     import llm
 
-    monkeypatch.setattr(llm, "_http_post", _mock)
-    return _mock
+    monkeypatch.setattr(llm, "_http_post", mock)
+    return mock
 
 
 class TestCallOpenAICompatible:
