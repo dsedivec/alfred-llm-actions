@@ -71,6 +71,7 @@ API calls require keys set as env vars (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `
   2. All tests pass — both new and existing (`uv run --with pytest pytest tests/ -v`).
   3. All changes are committed. A task is **never** finished until the work is committed.
 - **Commit often.** During multi-step plans, commit at each logical milestone (e.g. after a feature is working, after a refactor pass, after tests are green). Do not accumulate a large uncommitted diff across many steps.
+- **Keep `doc/requirements.md` up to date.** When adding new features or changing existing behavior, update the requirements doc to reflect the current state of the project.
 - When modifying existing behavior, update or add tests to cover the change **before** changing the implementation.
 - Mock macOS-only functions (`notify`, `_set_clipboard`, `paste_to_frontmost`) in tests that would otherwise call them. The `conftest.py` fixtures handle path isolation and cache reset automatically.
 
