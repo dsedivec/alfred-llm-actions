@@ -1,0 +1,8 @@
+---
+name: Translate to English
+output: clipboard
+system: You are a translator. Translate accurately while preserving tone and meaning.
+---
+Translate the following text to English:
+
+{{input}}

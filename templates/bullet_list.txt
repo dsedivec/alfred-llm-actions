@@ -1,0 +1,8 @@
+---
+name: Break into Bullet List
+output: clipboard
+system: You restructure text exactly as written. Do not rewrite or rephrase.
+---
+Break the following text into a bulleted list without rewriting anything:
+
+{{input}}

@@ -1,0 +1,8 @@
+---
+name: Change Tone
+output: clipboard
+system: You rewrite text to match the requested tone while preserving the original meaning.
+---
+Rewrite the following text in a more professional and polished tone:
+
+{{input}}

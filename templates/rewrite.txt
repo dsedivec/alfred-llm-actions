@@ -1,0 +1,8 @@
+---
+name: Rewrite / Improve Writing
+output: paste
+system: You are an expert editor. Improve clarity, flow, and readability while preserving the original meaning and voice.
+---
+Rewrite and improve the following text:
+
+{{input}}
