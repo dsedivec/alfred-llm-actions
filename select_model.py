@@ -10,7 +10,8 @@ import sys
 
 # Import shared state from llm.py
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from llm import load_models, get_active_model
+from llm import get_active_model, load_models
+
 
 def main():
     query = sys.argv[1].strip().lower() if len(sys.argv) > 1 else ""
@@ -29,14 +30,16 @@ def main():
         if entry.get("params"):
             keys = ", ".join(entry["params"].keys())
             params_info = f"  |  params: {keys}"
-        items.append({
-            "uid": label,
-            "title": ("✓ " + label) if is_active else label,
-            "subtitle": f"{provider}/{model_id}{params_info}"
-                        + ("  [ACTIVE]" if is_active else ""),
-            "arg": label,
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": label,
+                "title": ("✓ " + label) if is_active else label,
+                "subtitle": f"{provider}/{model_id}{params_info}"
+                + ("  [ACTIVE]" if is_active else ""),
+                "arg": label,
+                "icon": {"path": "icon.png"},
+            }
+        )
 
     # Move active model to top
     items.sort(key=lambda x: (0 if "\u2713" in x["title"] else 1, x["title"]))

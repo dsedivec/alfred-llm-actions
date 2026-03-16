@@ -1,7 +1,8 @@
 """Tests for Alfred script filter JSON output functions."""
 
 import json
-from llm import list_providers_as_alfred_items, label_model_as_alfred_items
+
+from llm import label_model_as_alfred_items, list_providers_as_alfred_items
 
 
 class TestListProviders:

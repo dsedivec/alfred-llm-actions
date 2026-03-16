@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 import pytest
 
 # Ensure the project root is importable
@@ -30,10 +31,14 @@ def model_dirs(tmp_path, monkeypatch):
     monkeypatch.setattr(llm, "TEMPLATES_DIR", str(templates_dir))
     monkeypatch.setattr(llm, "STATE_DIR", str(state_dir))
     monkeypatch.setattr(llm, "SYSTEM_PROMPT_FILE", str(tmp_path / "system_prompt.txt"))
-    monkeypatch.setattr(llm, "MODELS_DEFAULT_FILE", str(tmp_path / "models_default.yaml"))
+    monkeypatch.setattr(
+        llm, "MODELS_DEFAULT_FILE", str(tmp_path / "models_default.yaml")
+    )
     monkeypatch.setattr(llm, "MODELS_USER_FILE", str(tmp_path / "models.yaml"))
     monkeypatch.setattr(llm, "STATE_FILE", str(state_dir / "active_model.json"))
-    monkeypatch.setattr(llm, "CONVERSATION_FILE", str(state_dir / "last_conversation.json"))
+    monkeypatch.setattr(
+        llm, "CONVERSATION_FILE", str(state_dir / "last_conversation.json")
+    )
 
     return tmp_path, state_dir, templates_dir
 

@@ -1,10 +1,7 @@
 """Tests for state management: active model and conversation persistence."""
 
-from llm import (
-    get_active_model, set_active_model,
-    save_conversation, load_conversation, load_models,
-)
-
+from llm import (get_active_model, load_conversation, save_conversation,
+                 set_active_model)
 
 DEFAULTS = """\
 models:
@@ -35,7 +32,10 @@ def test_invalid_stored_falls_back(write_default_models):
 
 
 def test_conversation_roundtrip(model_dirs):
-    msgs = [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "hello"}]
+    msgs = [
+        {"role": "user", "content": "hi"},
+        {"role": "assistant", "content": "hello"},
+    ]
     save_conversation(msgs, "test-model")
     loaded = load_conversation()
     assert loaded["model"] == "test-model"

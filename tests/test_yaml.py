@@ -1,11 +1,11 @@
 """Tests for the minimal YAML parser, scalar formatter, and YAML writer."""
 
-from llm import _parse_yaml, _yaml_scalar_str, _write_yaml_value
-
+from llm import _parse_yaml, _write_yaml_value, _yaml_scalar_str
 
 # ---------------------------------------------------------------------------
 # _parse_yaml — scalar types
 # ---------------------------------------------------------------------------
+
 
 class TestParseYamlScalars:
     def test_string(self):
@@ -53,6 +53,7 @@ class TestParseYamlScalars:
 # _parse_yaml — structures
 # ---------------------------------------------------------------------------
 
+
 class TestParseYamlStructures:
     def test_nested_mapping(self):
         yaml = "a:\n  b: 1\n  c: 2"
@@ -91,12 +92,16 @@ class TestParseYamlStructures:
             "      reasoning: high"
         )
         result = _parse_yaml(yaml)
-        assert result["models"][0]["params"] == {"temperature": 0.7, "reasoning": "high"}
+        assert result["models"][0]["params"] == {
+            "temperature": 0.7,
+            "reasoning": "high",
+        }
 
 
 # ---------------------------------------------------------------------------
 # _parse_yaml — comments and edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestParseYamlEdgeCases:
     def test_line_comments_ignored(self):
@@ -126,6 +131,7 @@ class TestParseYamlEdgeCases:
 # ---------------------------------------------------------------------------
 # _yaml_scalar_str
 # ---------------------------------------------------------------------------
+
 
 class TestYamlScalarStr:
     def test_bool_true(self):
@@ -168,6 +174,7 @@ class TestYamlScalarStr:
 # ---------------------------------------------------------------------------
 # _write_yaml_value
 # ---------------------------------------------------------------------------
+
 
 class TestWriteYamlValue:
     def test_simple_scalar(self):

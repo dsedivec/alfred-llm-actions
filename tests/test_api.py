@@ -1,7 +1,8 @@
 """Tests for API call functions with mocked HTTP."""
 
 import pytest
-from llm import call_openai_compatible, call_anthropic, call_gemini
+
+from llm import call_anthropic, call_gemini, call_openai_compatible
 
 
 @pytest.fixture
@@ -17,6 +18,7 @@ def mock_http_post(monkeypatch):
     _mock._response = {}
 
     import llm
+
     monkeypatch.setattr(llm, "_http_post", _mock)
     return _mock
 
@@ -41,7 +43,9 @@ class TestCallOpenAICompatible:
         mock_http_post._response = {"choices": [{"message": {"content": "Hi!"}}]}
         call_openai_compatible(
             "https://api.openai.com/v1/chat/completions",
-            "sk-test", "gpt-4o", "",
+            "sk-test",
+            "gpt-4o",
+            "",
             [{"role": "user", "content": "Hello"}],
         )
         payload = mock_http_post.calls[0]["payload"]
@@ -52,7 +56,9 @@ class TestCallOpenAICompatible:
         mock_http_post._response = {"choices": [{"message": {"content": "ok"}}]}
         call_openai_compatible(
             "https://api.openai.com/v1/chat/completions",
-            "sk-test", "gpt-4o", "",
+            "sk-test",
+            "gpt-4o",
+            "",
             [{"role": "user", "content": "Hi"}],
             params={"temperature": 0.5},
         )
@@ -65,8 +71,14 @@ class TestCallOpenAICompatible:
         mock_http_post._response = {"choices": [{"message": {"content": "ok"}}]}
         call_openai_compatible(
             "https://api.openai.com/v1/chat/completions",
-            "sk-test", "gpt-4o", "sys",
-            [{"role": "user", "content": "q1"}, {"role": "assistant", "content": "a1"}, {"role": "user", "content": "q2"}],
+            "sk-test",
+            "gpt-4o",
+            "sys",
+            [
+                {"role": "user", "content": "q1"},
+                {"role": "assistant", "content": "a1"},
+                {"role": "user", "content": "q2"},
+            ],
             params={"temperature": 0.7},
         )
         payload = mock_http_post.calls[0]["payload"]
@@ -77,7 +89,9 @@ class TestCallAnthropic:
     def test_basic_response(self, mock_http_post):
         mock_http_post._response = {"content": [{"type": "text", "text": "Hello!"}]}
         result = call_anthropic(
-            "sk-test", "claude-sonnet-4-6", "Be helpful",
+            "sk-test",
+            "claude-sonnet-4-6",
+            "Be helpful",
             [{"role": "user", "content": "Hi"}],
         )
         assert result == "Hello!"
@@ -88,7 +102,9 @@ class TestCallAnthropic:
     def test_thinking_bumps_max_tokens(self, mock_http_post):
         mock_http_post._response = {"content": [{"type": "text", "text": "ok"}]}
         call_anthropic(
-            "sk-test", "claude-sonnet-4-6", "",
+            "sk-test",
+            "claude-sonnet-4-6",
+            "",
             [{"role": "user", "content": "Hi"}],
             params={"thinking": {"type": "enabled", "budget_tokens": 10000}},
         )
@@ -103,7 +119,9 @@ class TestCallAnthropic:
             ]
         }
         result = call_anthropic(
-            "sk-test", "claude-sonnet-4-6", "",
+            "sk-test",
+            "claude-sonnet-4-6",
+            "",
             [{"role": "user", "content": "What is the meaning of life?"}],
         )
         assert result == "The answer is 42."
@@ -111,9 +129,13 @@ class TestCallAnthropic:
 
 class TestCallGemini:
     def test_message_role_mapping(self, mock_http_post):
-        mock_http_post._response = {"candidates": [{"content": {"parts": [{"text": "Hi!"}]}}]}
+        mock_http_post._response = {
+            "candidates": [{"content": {"parts": [{"text": "Hi!"}]}}]
+        }
         call_gemini(
-            "key-test", "gemini-pro", "",
+            "key-test",
+            "gemini-pro",
+            "",
             [
                 {"role": "user", "content": "Hello"},
                 {"role": "assistant", "content": "Hi"},
@@ -125,18 +147,26 @@ class TestCallGemini:
         assert roles == ["user", "model", "user"]
 
     def test_system_instruction(self, mock_http_post):
-        mock_http_post._response = {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}
+        mock_http_post._response = {
+            "candidates": [{"content": {"parts": [{"text": "ok"}]}}]
+        }
         call_gemini(
-            "key-test", "gemini-pro", "Be concise",
+            "key-test",
+            "gemini-pro",
+            "Be concise",
             [{"role": "user", "content": "Hi"}],
         )
         payload = mock_http_post.calls[0]["payload"]
         assert payload["systemInstruction"] == {"parts": [{"text": "Be concise"}]}
 
     def test_response_extraction(self, mock_http_post):
-        mock_http_post._response = {"candidates": [{"content": {"parts": [{"text": "Result"}]}}]}
+        mock_http_post._response = {
+            "candidates": [{"content": {"parts": [{"text": "Result"}]}}]
+        }
         result = call_gemini(
-            "key-test", "gemini-pro", "",
+            "key-test",
+            "gemini-pro",
+            "",
             [{"role": "user", "content": "Hi"}],
         )
         assert result == "Result"

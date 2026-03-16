@@ -1,14 +1,17 @@
 """Tests for parse_template and load_templates."""
 
 import os
-from llm import parse_template, load_templates
+
+from llm import load_templates, parse_template
 
 
 def test_full_frontmatter(model_dirs):
     _, _, templates_dir = model_dirs
     path = os.path.join(str(templates_dir), "summarize.txt")
     with open(path, "w") as f:
-        f.write("---\nname: Summarize\noutput: paste\nsystem: Be concise\n---\nSummarize: {{input}}\n")
+        f.write(
+            "---\nname: Summarize\noutput: paste\nsystem: Be concise\n---\nSummarize: {{input}}\n"
+        )
     t = parse_template(path)
     assert t["name"] == "Summarize"
     assert t["output"] == "paste"

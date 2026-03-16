@@ -2,10 +2,10 @@
 
 from llm import _translate_shorthands
 
-
 # ---------------------------------------------------------------------------
 # Reasoning
 # ---------------------------------------------------------------------------
+
 
 class TestReasoning:
     def test_anthropic_auto(self):
@@ -58,6 +58,7 @@ class TestReasoning:
 # Web search
 # ---------------------------------------------------------------------------
 
+
 class TestWebSearch:
     def test_openai(self):
         result = _translate_shorthands("openai", {"web_search": True})
@@ -86,9 +87,12 @@ class TestWebSearch:
 # Combined and edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestCombined:
     def test_reasoning_and_web_search(self):
-        result = _translate_shorthands("anthropic", {"reasoning": "high", "web_search": True})
+        result = _translate_shorthands(
+            "anthropic", {"reasoning": "high", "web_search": True}
+        )
         assert result["thinking"]["budget_tokens"] == 10000
         assert {"type": "web_search_20250305"} in result["tools"]
         assert "reasoning" not in result
@@ -100,11 +104,15 @@ class TestCombined:
 
     def test_raw_params_override_translated(self):
         # If user provides explicit reasoning_effort, it should win over shorthand
-        result = _translate_shorthands("openai", {"reasoning": "auto", "reasoning_effort": "low"})
+        result = _translate_shorthands(
+            "openai", {"reasoning": "auto", "reasoning_effort": "low"}
+        )
         assert result["reasoning_effort"] == "low"
 
     def test_shorthand_keys_removed(self):
-        result = _translate_shorthands("openai", {"reasoning": "auto", "web_search": True, "temperature": 0.5})
+        result = _translate_shorthands(
+            "openai", {"reasoning": "auto", "web_search": True, "temperature": 0.5}
+        )
         assert "reasoning" not in result
         assert "web_search" not in result
 

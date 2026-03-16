@@ -2,7 +2,6 @@
 
 from llm import load_models
 
-
 DEFAULTS_TWO_MODELS = """\
 models:
   - label: GPT-4o
@@ -61,7 +60,7 @@ def test_remove_exact_match(write_default_models, write_user_models):
 
 def test_remove_glob(write_default_models, write_user_models):
     write_default_models(DEFAULTS_MANY)
-    write_user_models("models:\n  - remove_defaults: \"GPT-*\"\n")
+    write_user_models('models:\n  - remove_defaults: "GPT-*"\n')
     models = load_models()
     labels = [m["label"] for m in models]
     assert "GPT-4o" not in labels

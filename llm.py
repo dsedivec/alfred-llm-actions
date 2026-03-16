@@ -37,7 +37,9 @@ def _parse_yaml(text):
         s = s.strip()
         if not s:
             return ""
-        if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
+        if (s.startswith('"') and s.endswith('"')) or (
+            s.startswith("'") and s.endswith("'")
+        ):
             return s[1:-1]
         low = s.lower()
         if low in ("true", "yes"):
@@ -63,15 +65,15 @@ def _parse_yaml(text):
                 in_quote = ch
             elif ch == in_quote:
                 in_quote = None
-            elif ch == '#' and not in_quote:
+            elif ch == "#" and not in_quote:
                 return line[:i].rstrip()
         return line
 
     # Build (indent, content) list, skipping blanks/comments
     entries = []
-    for raw in text.split('\n'):
+    for raw in text.split("\n"):
         stripped = raw.lstrip()
-        if not stripped or stripped.startswith('#'):
+        if not stripped or stripped.startswith("#"):
             continue
         indent = len(raw) - len(stripped)
         content = _strip_comment(stripped)
@@ -92,9 +94,9 @@ def _parse_yaml(text):
             return None
         # Determine if this block is a list or mapping
         _, first = lines[0]
-        if first.startswith('- '):
+        if first.startswith("- "):
             return _parse_list(lines)
-        elif ':' in first:
+        elif ":" in first:
             return _parse_mapping(lines)
         else:
             return _scalar(first)
@@ -105,7 +107,7 @@ def _parse_yaml(text):
         i = 0
         while i < len(lines):
             indent, content = lines[i]
-            if indent != base or not content.startswith('- '):
+            if indent != base or not content.startswith("- "):
                 i += 1
                 continue
             item_text = content[2:].strip()
@@ -116,7 +118,9 @@ def _parse_yaml(text):
                 children.append(lines[j])
                 j += 1
 
-            if ':' in item_text and not (item_text.startswith('"') or item_text.startswith("'")):
+            if ":" in item_text and not (
+                item_text.startswith('"') or item_text.startswith("'")
+            ):
                 # "- key: value" starts a mapping item
                 # Normalize: treat "- key: val" as a mapping line at indent base+2
                 first_line = (base + 2, item_text)
@@ -140,17 +144,19 @@ def _parse_yaml(text):
             if indent != base:
                 i += 1
                 continue
-            if ':' not in content:
+            if ":" not in content:
                 i += 1
                 continue
-            key, val_str = content.split(':', 1)
+            key, val_str = content.split(":", 1)
             key = key.strip()
             val_str = val_str.strip()
             if val_str:
                 # Inline flow sequence: [item1, item2]
-                if val_str.startswith('[') and val_str.endswith(']'):
+                if val_str.startswith("[") and val_str.endswith("]"):
                     inner = val_str[1:-1]
-                    result[key] = [_scalar(x.strip()) for x in inner.split(',') if x.strip()]
+                    result[key] = [
+                        _scalar(x.strip()) for x in inner.split(",") if x.strip()
+                    ]
                 else:
                     result[key] = _scalar(val_str)
                 i += 1
@@ -220,7 +226,11 @@ def load_models():
                 additions.append(entry)
         # Apply removals to defaults only
         for pattern in removals:
-            models = [m for m in models if not fnmatch.fnmatchcase(m.get("label", ""), pattern)]
+            models = [
+                m
+                for m in models
+                if not fnmatch.fnmatchcase(m.get("label", ""), pattern)
+            ]
         models.extend(additions)
 
     _models_cache = models
@@ -264,9 +274,19 @@ def _save_models_cache(provider, models):
 
 # Non-chat model prefixes to filter out from OpenAI listings
 _OPENAI_SKIP_PREFIXES = (
-    "dall-e", "whisper", "tts", "text-embedding", "embedding",
-    "davinci", "babbage", "curie", "ada", "moderation",
-    "text-search", "text-similarity", "code-search",
+    "dall-e",
+    "whisper",
+    "tts",
+    "text-embedding",
+    "embedding",
+    "davinci",
+    "babbage",
+    "curie",
+    "ada",
+    "moderation",
+    "text-search",
+    "text-similarity",
+    "code-search",
 )
 
 
@@ -334,7 +354,32 @@ def _yaml_scalar_str(value):
     if value is None:
         return "null"
     s = str(value)
-    if s and not any(c in s for c in (':', '#', '{', '}', '[', ']', ',', '&', '*', '?', '|', '-', '<', '>', '=', '!', '%', '@', '`', '"', "'")):
+    if s and not any(
+        c in s
+        for c in (
+            ":",
+            "#",
+            "{",
+            "}",
+            "[",
+            "]",
+            ",",
+            "&",
+            "*",
+            "?",
+            "|",
+            "-",
+            "<",
+            ">",
+            "=",
+            "!",
+            "%",
+            "@",
+            "`",
+            '"',
+            "'",
+        )
+    ):
         return s
     return f'"{s}"'
 
@@ -360,7 +405,9 @@ def _write_yaml_value(lines, key, value, indent):
                                     _write_yaml_value(lines, k2, v2, indent + 3)
                             elif isinstance(v, list):
                                 for li in v:
-                                    lines.append(f"{prefix}      - {_yaml_scalar_str(li)}")
+                                    lines.append(
+                                        f"{prefix}      - {_yaml_scalar_str(li)}"
+                                    )
                         else:
                             lines.append(f"{prefix}  - {k}: {_yaml_scalar_str(v)}")
                         first = False
@@ -426,15 +473,21 @@ _PROVIDERS = [
 def list_providers_as_alfred_items(query):
     items = []
     for p in _PROVIDERS:
-        if query and query.lower() not in p["name"].lower() and query.lower() not in p["id"]:
+        if (
+            query
+            and query.lower() not in p["name"].lower()
+            and query.lower() not in p["id"]
+        ):
             continue
-        items.append({
-            "uid": p["id"],
-            "title": p["name"],
-            "subtitle": p["subtitle"],
-            "arg": p["id"],
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": p["id"],
+                "title": p["name"],
+                "subtitle": p["subtitle"],
+                "arg": p["id"],
+                "icon": {"path": "icon.png"},
+            }
+        )
     return json.dumps({"items": items})
 
 
@@ -442,33 +495,43 @@ def list_provider_models_as_alfred_items(provider, query):
     items = []
     if provider == "anthropic":
         if query.strip():
-            items.append({
-                "uid": "manual",
-                "title": query,
-                "subtitle": f"Use model ID: {query}",
-                "arg": f"anthropic:{query}",
-                "icon": {"path": "icon.png"},
-            })
+            items.append(
+                {
+                    "uid": "manual",
+                    "title": query,
+                    "subtitle": f"Use model ID: {query}",
+                    "arg": f"anthropic:{query}",
+                    "icon": {"path": "icon.png"},
+                }
+            )
         else:
-            items.append({
-                "uid": "hint",
-                "title": "Type a model ID...",
-                "subtitle": "e.g. claude-sonnet-4-6, claude-opus-4-6",
-                "valid": False,
-                "icon": {"path": "icon.png"},
-            })
+            items.append(
+                {
+                    "uid": "hint",
+                    "title": "Type a model ID...",
+                    "subtitle": "e.g. claude-sonnet-4-6, claude-opus-4-6",
+                    "valid": False,
+                    "icon": {"path": "icon.png"},
+                }
+            )
         return json.dumps({"items": items})
 
     try:
         models = _fetch_provider_models(provider)
     except RuntimeError as e:
-        return json.dumps({"items": [{
-            "uid": "error",
-            "title": "Error fetching models",
-            "subtitle": str(e)[:100],
-            "valid": False,
-            "icon": {"path": "icon.png"},
-        }]})
+        return json.dumps(
+            {
+                "items": [
+                    {
+                        "uid": "error",
+                        "title": "Error fetching models",
+                        "subtitle": str(e)[:100],
+                        "valid": False,
+                        "icon": {"path": "icon.png"},
+                    }
+                ]
+            }
+        )
 
     for m in models:
         mid = m["id"]
@@ -476,21 +539,25 @@ def list_provider_models_as_alfred_items(provider, query):
         display = f"{name} ({mid})" if name != mid else mid
         if query and query.lower() not in display.lower():
             continue
-        items.append({
-            "uid": mid,
-            "title": display,
-            "subtitle": mid,
-            "arg": f"{provider}:{mid}",
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": mid,
+                "title": display,
+                "subtitle": mid,
+                "arg": f"{provider}:{mid}",
+                "icon": {"path": "icon.png"},
+            }
+        )
 
     if not items:
-        items.append({
-            "uid": "empty",
-            "title": "No models found" + (f" matching '{query}'" if query else ""),
-            "valid": False,
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": "empty",
+                "title": "No models found" + (f" matching '{query}'" if query else ""),
+                "valid": False,
+                "icon": {"path": "icon.png"},
+            }
+        )
     return json.dumps({"items": items})
 
 
@@ -508,13 +575,15 @@ def label_model_as_alfred_items(provider_model, query):
         label = default_label
         subtitle = "Press Enter to use default, or type a custom label"
 
-    items = [{
-        "uid": "label",
-        "title": label,
-        "subtitle": subtitle,
-        "arg": label,
-        "icon": {"path": "icon.png"},
-    }]
+    items = [
+        {
+            "uid": "label",
+            "title": label,
+            "subtitle": subtitle,
+            "arg": label,
+            "icon": {"path": "icon.png"},
+        }
+    ]
     return json.dumps({"items": items})
 
 
@@ -525,23 +594,32 @@ def list_user_models_as_alfred_items(query):
         label = entry.get("label", "")
         provider = entry.get("provider", "")
         model_id = entry.get("model", "")
-        if query and query.lower() not in label.lower() and query.lower() not in model_id.lower():
+        if (
+            query
+            and query.lower() not in label.lower()
+            and query.lower() not in model_id.lower()
+        ):
             continue
-        items.append({
-            "uid": label,
-            "title": label,
-            "subtitle": f"{provider}/{model_id}",
-            "arg": label,
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": label,
+                "title": label,
+                "subtitle": f"{provider}/{model_id}",
+                "arg": label,
+                "icon": {"path": "icon.png"},
+            }
+        )
     if not items:
-        items.append({
-            "uid": "empty",
-            "title": "No user-added models" + (f" matching '{query}'" if query else ""),
-            "subtitle": "Use llm-add to add models",
-            "valid": False,
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": "empty",
+                "title": "No user-added models"
+                + (f" matching '{query}'" if query else ""),
+                "subtitle": "Use llm-add to add models",
+                "valid": False,
+                "icon": {"path": "icon.png"},
+            }
+        )
     return json.dumps({"items": items})
 
 
@@ -689,11 +767,11 @@ def _applescript_escape(s):
 def paste_to_frontmost(text):
     """Copy text to clipboard and paste it into the frontmost app."""
     _set_clipboard(text)
-    script = '''
+    script = """
     tell application "System Events"
         keystroke "v" using command down
     end tell
-    '''
+    """
     subprocess.run(["osascript", "-e", script], check=False)
 
 
@@ -767,7 +845,7 @@ def parse_template(filepath):
             if ":" in line:
                 key, val = line.split(":", 1)
                 meta[key.strip().lower()] = val.strip()
-        body = content[m.end():]
+        body = content[m.end() :]
     return {
         "name": meta.get("name", os.path.splitext(os.path.basename(filepath))[0]),
         "output": meta.get("output", "clipboard"),
@@ -833,7 +911,9 @@ def _http_get(url, headers=None, timeout=30):
         raise RuntimeError(f"Network error: {e.reason}") from e
 
 
-def call_openai_compatible(endpoint, api_key, model_id, system_prompt, messages, params=None):
+def call_openai_compatible(
+    endpoint, api_key, model_id, system_prompt, messages, params=None
+):
     """Call OpenAI-compatible API (OpenAI, OpenRouter)."""
     headers = {
         "Content-Type": "application/json",
@@ -936,7 +1016,12 @@ def call_llm(label, system_prompt, messages):
 
     if provider == "openai":
         return call_openai_compatible(
-            PROVIDER_ENDPOINTS["openai"], api_key, model_id, system_prompt, messages, params
+            PROVIDER_ENDPOINTS["openai"],
+            api_key,
+            model_id,
+            system_prompt,
+            messages,
+            params,
         )
     elif provider == "anthropic":
         return call_anthropic(api_key, model_id, system_prompt, messages, params)
@@ -944,7 +1029,12 @@ def call_llm(label, system_prompt, messages):
         return call_gemini(api_key, model_id, system_prompt, messages, params)
     elif provider == "openrouter":
         return call_openai_compatible(
-            PROVIDER_ENDPOINTS["openrouter"], api_key, model_id, system_prompt, messages, params
+            PROVIDER_ENDPOINTS["openrouter"],
+            api_key,
+            model_id,
+            system_prompt,
+            messages,
+            params,
         )
     else:
         raise RuntimeError(f"Unknown provider: {provider}")
@@ -1021,7 +1111,9 @@ def handle_template(template_name, input_text):
         notify("LLM Error", str(e))
         return
 
-    save_conversation(messages + [{"role": "assistant", "content": response}], model_key)
+    save_conversation(
+        messages + [{"role": "assistant", "content": response}], model_key
+    )
     deliver_output(response, output_mode)
 
 
@@ -1033,13 +1125,15 @@ def list_templates_as_alfred_items(query=""):
         name = t["name"]
         if query and query.lower() not in name.lower():
             continue
-        items.append({
-            "uid": name,
-            "title": name,
-            "subtitle": f"Output: {t['output']}  |  {t['body'][:80]}...",
-            "arg": name,
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": name,
+                "title": name,
+                "subtitle": f"Output: {t['output']}  |  {t['body'][:80]}...",
+                "arg": name,
+                "icon": {"path": "icon.png"},
+            }
+        )
     return json.dumps({"items": items})
 
 
@@ -1060,36 +1154,43 @@ def manage_templates_list(query=""):
 
     # "Open Templates Folder" — always shown
     if not query or "open" in query.lower() or "folder" in query.lower():
-        items.append({
-            "uid": "_open_folder",
-            "title": "Open Templates Folder",
-            "subtitle": TEMPLATES_DIR,
-            "arg": "_open_folder",
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": "_open_folder",
+                "title": "Open Templates Folder",
+                "subtitle": TEMPLATES_DIR,
+                "arg": "_open_folder",
+                "icon": {"path": "icon.png"},
+            }
+        )
 
     # "Create new" — shown when the user has typed something
     if query.strip():
-        items.insert(0, {
-            "uid": "_create_new",
-            "title": f"Create New Template: \"{query}\"",
-            "subtitle": "Creates a new .txt template and opens it for editing",
-            "arg": f"_create:{query}",
-            "icon": {"path": "icon.png"},
-        })
+        items.insert(
+            0,
+            {
+                "uid": "_create_new",
+                "title": f'Create New Template: "{query}"',
+                "subtitle": "Creates a new .txt template and opens it for editing",
+                "arg": f"_create:{query}",
+                "icon": {"path": "icon.png"},
+            },
+        )
 
     # Existing templates — edit on select
     for t in templates:
         name = t["name"]
         if query and query.lower() not in name.lower():
             continue
-        items.append({
-            "uid": name,
-            "title": name,
-            "subtitle": f"Edit  |  Output: {t['output']}  |  {os.path.basename(t['file'])}",
-            "arg": f"_edit:{t['file']}",
-            "icon": {"path": "icon.png"},
-        })
+        items.append(
+            {
+                "uid": name,
+                "title": name,
+                "subtitle": f"Edit  |  Output: {t['output']}  |  {os.path.basename(t['file'])}",
+                "arg": f"_edit:{t['file']}",
+                "icon": {"path": "icon.png"},
+            }
+        )
 
     return json.dumps({"items": items})
 
@@ -1100,8 +1201,10 @@ def handle_manage_template(action):
         subprocess.run(["open", TEMPLATES_DIR], check=False)
 
     elif action.startswith("_create:"):
-        name = action[len("_create:"):]
-        filename = re.sub(r"[^\w\s-]", "", name).strip().replace(" ", "_").lower() + ".txt"
+        name = action[len("_create:") :]
+        filename = (
+            re.sub(r"[^\w\s-]", "", name).strip().replace(" ", "_").lower() + ".txt"
+        )
         filepath = os.path.join(TEMPLATES_DIR, filename)
         if not os.path.exists(filepath):
             with open(filepath, "w") as f:
@@ -1109,7 +1212,7 @@ def handle_manage_template(action):
         subprocess.run(["open", "-t", filepath], check=False)
 
     elif action.startswith("_edit:"):
-        filepath = action[len("_edit:"):]
+        filepath = action[len("_edit:") :]
         if os.path.exists(filepath):
             subprocess.run(["open", "-t", filepath], check=False)
         else:
@@ -1119,6 +1222,7 @@ def handle_manage_template(action):
 # ---------------------------------------------------------------------------
 # CLI dispatcher
 # ---------------------------------------------------------------------------
+
 
 def main():
     if len(sys.argv) < 2:
