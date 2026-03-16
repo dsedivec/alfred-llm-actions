@@ -48,10 +48,42 @@ The built-in parser supports mappings, lists, scalars, inline flow sequences, co
 
 ## Testing
 
-No test suite exists. Test manually by running commands:
+### Running tests
+
 ```bash
-# Verify model loading
+uv run --with pytest pytest tests/ -v
+```
+
+The test suite uses **pytest** with `tmp_path` and `monkeypatch` for isolation. All tests run on Linux (no macOS dependencies). API tests mock `_http_post`/`_http_get` — no real API keys needed.
+
+For manual smoke tests that hit real APIs:
+```bash
 python3 llm.py list-templates ""
 python3 select_model.py ""
 ```
 API calls require keys set as env vars (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`).
+
+### Development workflow
+
+- **Red/green development is mandatory.** Always write failing tests first, then write the implementation to make them pass. Do not write implementation code without a corresponding test.
+- **You are not done until:**
+  1. Tests exist for all new functionality.
+  2. All tests pass — both new and existing (`uv run --with pytest pytest tests/ -v`).
+- When modifying existing behavior, update or add tests to cover the change **before** changing the implementation.
+- Mock macOS-only functions (`notify`, `_set_clipboard`, `paste_to_frontmost`) in tests that would otherwise call them. The `conftest.py` fixtures handle path isolation and cache reset automatically.
+
+### Test structure
+
+```
+tests/
+  conftest.py               # Shared fixtures (path patching, cache reset, file writers)
+  test_yaml.py              # _parse_yaml, _yaml_scalar_str, _write_yaml_value
+  test_deep_merge.py        # _deep_merge
+  test_shorthands.py        # _translate_shorthands (4 providers × reasoning/web_search)
+  test_models.py            # load_models (defaults, user additions, remove_defaults globs)
+  test_templates.py         # parse_template, load_templates
+  test_state.py             # get/set_active_model, save/load_conversation
+  test_alfred_items.py      # list_providers_as_alfred_items, label_model_as_alfred_items
+  test_api.py               # call_openai_compatible, call_anthropic, call_gemini (mocked HTTP)
+  test_cli.py               # main() dispatcher wiring
+```
